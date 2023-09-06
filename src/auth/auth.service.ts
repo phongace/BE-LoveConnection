@@ -11,17 +11,17 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async findOrCreate({ email, username, photoUrl }): Promise<User> {
+  async findOrCreate({ email, username, photoUrl }): Promise<any> {
     const user = await this.findUserByEmail(email);
-    await this.generateJwtToken(email);
+    let accessToken = await this.generateJwtToken(email);
 
     if (!user) {
       const newUser = await this.createUser({ email, username, photoUrl });
-      await this.generateJwtToken(newUser);
-      return newUser;
+      accessToken = await this.generateJwtToken(newUser);
+      return { newUser, accessToken };
     }
 
-    return user;
+    return { user, accessToken };
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
@@ -48,9 +48,10 @@ export class AuthService {
   }
 
   async generateJwtToken(data): Promise<string> {
-    let payload: { email: any; sub?: string } = { email: data };
+    const payload: { email: any; sub?: string } = { email: data };
 
     if (data.id) payload.sub = data.id;
-    return this.jwtService.sign(payload);
+
+    return this.jwtService.signAsync(payload);
   }
 }
